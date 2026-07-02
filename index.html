@@ -1057,7 +1057,7 @@
       wheelShell.style.setProperty("--wheel-zoom", zoom.toFixed(3));
     }
 
-    function updatePointerMotion() {
+    function updatePointerMotion(elapsed = 0, duration = 0) {
       if (participants.length < 2) {
         pointer.style.setProperty("--pointer-angle", "0deg");
         return;
@@ -1076,7 +1076,8 @@
       pointer.style.setProperty("--pointer-angle", `${flexAngle.toFixed(2)}deg`);
 
       if (currentSegment !== lastPointerSegment) {
-        if (lastPointerSegment !== -1 && isSpinning) {
+        const canPlayTick = duration === 0 || elapsed < duration - 800;
+        if (lastPointerSegment !== -1 && isSpinning && canPlayTick) {
           playPointerTick();
         }
         lastPointerSegment = currentSegment;
@@ -1139,7 +1140,7 @@
 
         canvas.style.setProperty("--wheel-angle", `${rotation}deg`);
         updateWheelZoom(elapsed, duration);
-        updatePointerMotion();
+        updatePointerMotion(elapsed, duration);
 
         if (progress < 1) {
           animationId = requestAnimationFrame(tick);
