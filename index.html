@@ -85,21 +85,6 @@
       line-height: 0.94;
     }
 
-    .brand-badge {
-      display: grid;
-      place-items: center;
-      min-width: 76px;
-      min-height: 76px;
-      border: 5px solid var(--black);
-      border-radius: 50%;
-      color: var(--white);
-      background: var(--blue);
-      font-size: 1.05rem;
-      font-weight: 950;
-      text-align: center;
-      box-shadow: 6px 6px 0 var(--black);
-    }
-
     .section-title {
       margin: 0 0 10px;
       color: var(--black);
@@ -361,8 +346,9 @@
       border-radius: 50%;
       color: var(--white);
       background: radial-gradient(circle at 35% 32%, #69aaff, var(--blue) 52%, var(--blue-dark));
-      font-size: clamp(1.1rem, 2.2vw, 2rem);
+      font-size: clamp(0.82rem, 1.35vw, 1.35rem);
       font-weight: 950;
+      line-height: 1.05;
       text-align: center;
       box-shadow: 0 0 0 8px #fff, 0 12px 28px rgba(0, 0, 0, 0.3);
       pointer-events: none;
@@ -667,7 +653,6 @@
     <aside class="panel left-panel">
       <header class="brand">
         <h1 class="brand-title">PLAYJAM<br />2026</h1>
-        <div class="brand-badge">BIG<br />WHEEL</div>
       </header>
 
       <section class="input-wrap" aria-label="참여자 입력">
@@ -700,14 +685,14 @@
     <section class="panel stage" aria-label="룰렛 추첨 무대">
       <header class="stage-header">
         <h2 class="event-name" id="currentPrizeTitle">PRIZE WHEEL</h2>
-        <div class="timer" id="timer">40</div>
+        <div class="timer" id="timer">33</div>
       </header>
 
       <div class="wheel-zone">
         <div class="wheel-shell">
           <div class="pointer" aria-hidden="true"></div>
           <canvas id="wheelCanvas" width="1200" height="1200" aria-label="경품 추첨 룰렛"></canvas>
-          <div class="hub">SPIN<br />SHOW</div>
+          <div class="hub">PLAYJAM<br />2026</div>
         </div>
       </div>
 
@@ -771,8 +756,16 @@
       "배민 상품권 10만원 3"
     ];
     const sampleNames = [
-      "김민준", "이서연", "박지훈", "최유진", "정하늘", "강도윤",
-      "윤지아", "조현우", "한서준", "오하린", "문지후", "장예린"
+      "최이랑", "김은경", "이승철", "최준혁", "허선행", "이영미", "김지희",
+      "최인혜", "박용운", "서영찬", "김성수", "정정호", "오수민", "박건희",
+      "유영선", "윤상필", "박은강", "김지예", "유슬기", "조인선", "양지혜",
+      "임세영", "최아름A", "이진혁", "허건", "석수민", "박효진", "오희은",
+      "강현영", "김선철", "박영근", "윤재원", "이상민", "유영수", "한서연",
+      "이반석", "김민혁", "조규혁", "김창봉", "이미지", "손은혜", "이기정",
+      "이지예", "이혜승", "관민죽", "채림", "오찬란", "허정민", "이가현",
+      "정혜경", "오동주", "박종빈", "배현성", "김혜원", "김도윤", "김민재",
+      "양지현", "최수빈", "원용호", "유혜심", "박은하", "김민지", "이영희",
+      "김영조", "박수향", "김도경", "한수현", "심하나", "정병종", "최윤지"
     ];
 
     let participants = [];
@@ -785,6 +778,8 @@
     let timerId = null;
     let zoomResetId = null;
     let lastPointerSegment = -1;
+    let audioContext = null;
+    let lastTickSoundAt = 0;
 
     input.value = sampleNames.join("\n");
 
@@ -944,6 +939,114 @@
       return ((value % 360) + 360) % 360;
     }
 
+    function ensureAudio() {
+      const AudioCtor = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtor) return null;
+      if (!audioContext) {
+        audioContext = new AudioCtor();
+      }
+      if (audioContext.state === "suspended") {
+        audioContext.resume();
+      }
+      return audioContext;
+    }
+
+    function playPointerTick() {
+      const audio = ensureAudio();
+      if (!audio) return;
+
+      const nowMs = performance.now();
+      if (nowMs - lastTickSoundAt < 45) return;
+      lastTickSoundAt = nowMs;
+
+      const now = audio.currentTime;
+      const oscillator = audio.createOscillator();
+      const gain = audio.createGain();
+      const filter = audio.createBiquadFilter();
+
+      oscillator.type = "triangle";
+      oscillator.frequency.setValueAtTime(220, now);
+      oscillator.frequency.exponentialRampToValueAtTime(95, now + 0.065);
+      filter.type = "lowpass";
+      filter.frequency.setValueAtTime(900, now);
+      filter.Q.setValueAtTime(2.6, now);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.22, now + 0.008);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.11);
+
+      oscillator.connect(filter);
+      filter.connect(gain);
+      gain.connect(audio.destination);
+      oscillator.start(now);
+      oscillator.stop(now + 0.08);
+    }
+
+    function playFanfare() {
+      const audio = ensureAudio();
+      if (!audio) return;
+
+      const notes = [
+        { frequency: 392, start: 0, length: 0.16 },
+        { frequency: 523.25, start: 0.08, length: 0.22 },
+        { frequency: 659.25, start: 0.18, length: 0.22 },
+        { frequency: 783.99, start: 0.3, length: 0.24 },
+        { frequency: 1046.5, start: 0.46, length: 0.36 },
+        { frequency: 1318.51, start: 0.62, length: 0.5 },
+        { frequency: 987.77, start: 0.94, length: 0.22 },
+        { frequency: 1174.66, start: 1.08, length: 0.24 },
+        { frequency: 1567.98, start: 1.22, length: 0.7 },
+        { frequency: 783.99, start: 1.22, length: 0.7 },
+        { frequency: 523.25, start: 1.22, length: 0.7 }
+      ];
+
+      notes.forEach((note) => {
+        const start = audio.currentTime + note.start;
+        const oscillator = audio.createOscillator();
+        const gain = audio.createGain();
+        const filter = audio.createBiquadFilter();
+        oscillator.type = note.frequency > 1000 ? "sawtooth" : "triangle";
+        oscillator.frequency.setValueAtTime(note.frequency, start);
+        oscillator.frequency.linearRampToValueAtTime(note.frequency * 1.008, start + note.length);
+        filter.type = "lowpass";
+        filter.frequency.setValueAtTime(2600, start);
+        filter.Q.setValueAtTime(0.9, start);
+        gain.gain.setValueAtTime(0.0001, start);
+        gain.gain.exponentialRampToValueAtTime(note.frequency > 1000 ? 0.09 : 0.16, start + 0.025);
+        gain.gain.exponentialRampToValueAtTime(0.0001, start + note.length);
+        oscillator.connect(filter);
+        filter.connect(gain);
+        gain.connect(audio.destination);
+        oscillator.start(start);
+        oscillator.stop(start + note.length + 0.02);
+      });
+
+      for (let i = 0; i < 5; i += 1) {
+        const burstStart = audio.currentTime + 0.1 + i * 0.18;
+        const buffer = audio.createBuffer(1, Math.floor(audio.sampleRate * 0.08), audio.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let j = 0; j < data.length; j += 1) {
+          data[j] = (Math.random() * 2 - 1) * (1 - j / data.length);
+        }
+        const source = audio.createBufferSource();
+        const filter = audio.createBiquadFilter();
+        const gain = audio.createGain();
+        source.buffer = buffer;
+        filter.type = "highpass";
+        filter.frequency.setValueAtTime(1800, burstStart);
+        gain.gain.setValueAtTime(0.08, burstStart);
+        gain.gain.exponentialRampToValueAtTime(0.0001, burstStart + 0.08);
+        source.connect(filter);
+        filter.connect(gain);
+        gain.connect(audio.destination);
+        source.start(burstStart);
+        source.stop(burstStart + 0.08);
+      }
+    }
+
+    function playWinnerSound() {
+      playFanfare();
+    }
+
     function updateWheelZoom(elapsed, duration) {
       const zoomStart = 10000;
       const zoomRamp = Math.max(1, duration - zoomStart - 7000);
@@ -973,6 +1076,9 @@
       pointer.style.setProperty("--pointer-angle", `${flexAngle.toFixed(2)}deg`);
 
       if (currentSegment !== lastPointerSegment) {
+        if (lastPointerSegment !== -1 && isSpinning) {
+          playPointerTick();
+        }
         lastPointerSegment = currentSegment;
         pointer.classList.remove("tick");
         void pointer.offsetWidth;
@@ -993,19 +1099,22 @@
       const winnerIndex = chooseWinnerIndex();
       const selectedName = participants[winnerIndex];
       const prizeForRound = selectedPrize || "경품";
-      const duration = 40000;
+      const duration = 33000;
+      const virtualDuration = 40000;
+      const cutoffEase = easeOutCubic(duration / virtualDuration);
       const startTime = performance.now();
       const startRotation = rotation;
       const finalRotation = calculateFinalRotation(winnerIndex);
 
       clearTimeout(zoomResetId);
+      ensureAudio();
       isSpinning = true;
       currentWinner = "";
       winnerName.textContent = "추첨 중...";
       winnerCard.classList.remove("celebrate");
       app.classList.add("spinning");
       resetWheelFocus();
-      timer.textContent = "40";
+      timer.textContent = "33";
       tickerText.textContent = `${prizeForRound} 추첨 중... 마지막 구간에서 속도가 줄어듭니다`;
       updateButtons();
 
@@ -1024,7 +1133,9 @@
         const elapsed = Math.min(duration, now - startTime);
         const progress = elapsed / duration;
 
-        rotation = startRotation + (finalRotation - startRotation) * easeOutCubic(progress);
+        const virtualProgress = Math.min(duration, elapsed) / virtualDuration;
+        const easedProgress = easeOutCubic(virtualProgress) / cutoffEase;
+        rotation = startRotation + (finalRotation - startRotation) * easedProgress;
 
         canvas.style.setProperty("--wheel-angle", `${rotation}deg`);
         updateWheelZoom(elapsed, duration);
@@ -1056,6 +1167,7 @@
       zoomResetId = setTimeout(() => {
         if (!isSpinning) resetWheelFocus();
       }, 1100);
+      playWinnerSound();
       launchConfetti();
       winners.unshift({ name, prize, time: new Date() });
       renderHistory();
@@ -1129,7 +1241,7 @@
       rotation = 0;
       canvas.style.setProperty("--wheel-angle", "0deg");
       winnerName.textContent = "대기 중";
-      timer.textContent = "40";
+      timer.textContent = "33";
       tickerText.textContent = "참여자를 입력하면 룰렛이 준비됩니다";
       resetWheelFocus();
       renderHistory();
