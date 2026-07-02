@@ -187,6 +187,7 @@
     }
 
     .prize-button {
+      justify-content: flex-start;
       min-height: 48px;
       padding: 10px 12px;
       font-family: var(--font-body);
@@ -204,6 +205,9 @@
     }
 
     button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       min-height: 56px;
       border: 3px solid var(--black);
       border-radius: 8px;
@@ -213,8 +217,9 @@
       font-family: var(--font-body);
       font-size: 1rem;
       font-weight: 900;
-      line-height: 1;
+      line-height: 1.25;
       letter-spacing: 0;
+      white-space: nowrap;
       cursor: pointer;
       box-shadow: 5px 5px 0 var(--black);
       transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease;
@@ -248,7 +253,8 @@
     .stage {
       position: relative;
       display: grid;
-      grid-template-rows: auto 1fr auto;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      min-width: 0;
       height: calc(100vh - 48px);
       min-height: 620px;
       padding: 22px;
@@ -318,6 +324,7 @@
       position: relative;
       display: grid;
       place-items: center;
+      min-width: 0;
       min-height: 0;
       padding: 16px 0 8px;
     }
@@ -402,32 +409,32 @@
 
     .spin-controls {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 14px;
+      grid-template-columns: minmax(220px, 320px);
+      justify-content: center;
+      min-height: 104px;
       padding-top: 14px;
+      padding-bottom: 12px;
+      width: 100%;
+      min-width: 0;
     }
 
     .spin {
-      min-height: 68px;
+      width: 100%;
+      height: 82px;
+      min-height: 82px;
+      padding: 8px 16px;
       font-family: var(--font-display);
-      font-size: clamp(1.65rem, 3vw, 3.4rem);
+      font-size: clamp(1.65rem, 2.8vw, 3rem);
       font-weight: 900;
       letter-spacing: 0;
+      line-height: 1;
       color: var(--white);
       background: var(--blue);
     }
 
-    .reroll {
-      min-height: 68px;
-      font-family: var(--font-body);
-      font-size: clamp(1.2rem, 2vw, 2rem);
-      font-weight: 900;
-      letter-spacing: 0;
-    }
-
     .winner-card {
       position: relative;
-      min-height: 230px;
+      min-height: 180px;
       border: 4px solid var(--black);
       border-radius: 8px;
       padding: 18px;
@@ -449,7 +456,7 @@
     .winner-name {
       display: flex;
       align-items: center;
-      min-height: 112px;
+      min-height: 78px;
       margin: 0;
       word-break: keep-all;
       overflow-wrap: anywhere;
@@ -485,6 +492,7 @@
       display: flex;
       flex-direction: column;
       gap: 10px;
+      flex: 1;
       min-height: 0;
     }
 
@@ -492,7 +500,8 @@
       display: flex;
       flex-direction: column;
       gap: 8px;
-      max-height: 320px;
+      flex: 1;
+      max-height: none;
       margin: 0;
       padding: 0;
       overflow: auto;
@@ -539,7 +548,12 @@
     }
 
     .ticker {
+      position: relative;
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
       min-height: 48px;
+      height: 48px;
       border: 3px solid var(--black);
       border-radius: 8px;
       padding: 10px 14px;
@@ -554,9 +568,20 @@
     }
 
     .ticker-text {
+      position: absolute;
+      top: 50%;
+      left: 0;
       display: inline-block;
-      min-width: 100%;
-      animation: slideText 11s linear infinite;
+      width: max-content;
+      min-width: max-content;
+      padding-left: 0;
+      animation: slideText 120s linear infinite;
+    }
+
+    .stage footer {
+      width: 100%;
+      min-width: 0;
+      overflow: hidden;
     }
 
     .spinning .ticker {
@@ -564,7 +589,11 @@
     }
 
     .spinning .ticker-text {
-      animation-duration: 3.5s;
+      animation-duration: 120s;
+    }
+
+    .spinning .stage footer {
+      display: none;
     }
 
     .confetti-layer {
@@ -636,10 +665,10 @@
 
     @keyframes slideText {
       from {
-        transform: translateX(100%);
+        transform: translate3d(0, -50%, 0);
       }
       to {
-        transform: translateX(-100%);
+        transform: translate3d(-50%, -50%, 0);
       }
     }
 
@@ -732,6 +761,11 @@
       .stats-grid {
         grid-template-columns: 1fr;
       }
+
+      .spin-controls {
+        max-width: 320px;
+        margin: 0 auto;
+      }
     }
   </style>
 </head>
@@ -787,7 +821,6 @@
         <div class="ticker"><span class="ticker-text" id="tickerText">PLAYJAM 2026 경품 추첨을 시작할 준비가 되었습니다</span></div>
         <div class="spin-controls">
           <button class="spin primary" id="spinButton" type="button">SPIN</button>
-          <button class="reroll" id="rerollButton" type="button">다시 돌리기</button>
         </div>
       </footer>
     </section>
@@ -826,7 +859,6 @@
     const prizeButtons = document.getElementById("prizeButtons");
     const currentPrizeTitle = document.getElementById("currentPrizeTitle");
     const spinButton = document.getElementById("spinButton");
-    const rerollButton = document.getElementById("rerollButton");
     const excludeButton = document.getElementById("excludeButton");
     const shuffleButton = document.getElementById("shuffleButton");
     const clearButton = document.getElementById("clearButton");
@@ -834,7 +866,7 @@
     const colors = ["#ffcf23", "#ff477e", "#006cff", "#20d6a2", "#ff7a1a", "#8b5cff", "#00b8d9", "#f54242"];
     const prizeItems = [
       "플레이스테이션5",
-      "메타 레이밴 AI 선글라스",
+      "메타 레이밴 선글라스",
       "닌텐도 스위치2",
       "다이슨 에어랩",
       "에어팟4 ANC",
@@ -870,6 +902,10 @@
 
     input.value = sampleNames.join("\n");
 
+    function setTicker(message) {
+      tickerText.textContent = Array.from({ length: 100 }, () => message).join("     ");
+    }
+
     function renderPrizeButtons() {
       prizeButtons.innerHTML = "";
       prizeItems.forEach((prize) => {
@@ -887,7 +923,7 @@
       if (isSpinning) return;
       selectedPrize = prize;
       updatePrizeDisplay();
-      tickerText.textContent = `${prize} 경품 추첨을 준비합니다`;
+      setTicker(`${prize} 경품 추첨을 준비합니다`);
     }
 
     function updatePrizeDisplay() {
@@ -1203,7 +1239,7 @@
       app.classList.add("spinning");
       resetWheelFocus();
       timer.textContent = "33";
-      tickerText.textContent = `${prizeForRound} 추첨 중... 마지막 구간에서 속도가 줄어듭니다`;
+      setTicker(`${prizeForRound} 추첨 중... 마지막 구간에서 속도가 줄어듭니다`);
       updateButtons();
 
       clearInterval(timerId);
@@ -1211,9 +1247,9 @@
         const remaining = Math.max(0, Math.ceil((duration - (performance.now() - startTime)) / 1000));
         timer.textContent = String(remaining).padStart(2, "0");
         if (remaining <= 3 && remaining > 0) {
-          tickerText.textContent = "마지막 3초... 포인터를 주목하세요";
+          setTicker("마지막 3초... 포인터를 주목하세요");
         } else if (remaining <= 13) {
-          tickerText.textContent = "점점 느려집니다... 포인터를 주목하세요";
+          setTicker("점점 느려집니다... 포인터를 주목하세요");
         }
       }, 250);
 
@@ -1247,7 +1283,7 @@
       currentWinner = name;
       timer.textContent = "00";
       winnerName.textContent = name;
-      tickerText.textContent = `축하합니다! ${name} 님이 ${prize}에 당첨되었습니다`;
+      setTicker(`축하합니다! ${name} 님이 ${prize}에 당첨되었습니다`);
       winnerCard.classList.remove("celebrate");
       void winnerCard.offsetWidth;
       winnerCard.classList.add("celebrate");
@@ -1304,7 +1340,7 @@
       input.value = next.join("\n");
       currentWinner = "";
       winnerName.textContent = "다음 추첨 준비";
-      tickerText.textContent = "당첨자가 제외되었습니다. 다음 라운드를 시작하세요";
+      setTicker("당첨자가 제외되었습니다. 다음 라운드를 시작하세요");
       resetWheelFocus();
       syncParticipants();
     }
@@ -1318,7 +1354,7 @@
       }
       input.value = list.join("\n");
       syncParticipants();
-      tickerText.textContent = "참여자 순서를 섞었습니다";
+      setTicker("참여자 순서를 섞었습니다");
     }
 
     function clearAll() {
@@ -1330,7 +1366,7 @@
       canvas.style.setProperty("--wheel-angle", "0deg");
       winnerName.textContent = "대기 중";
       timer.textContent = "33";
-      tickerText.textContent = "참여자를 입력하면 룰렛이 준비됩니다";
+      setTicker("참여자를 입력하면 룰렛이 준비됩니다");
       resetWheelFocus();
       renderHistory();
       syncParticipants();
@@ -1339,7 +1375,6 @@
     function updateButtons() {
       const canSpin = !isSpinning && participants.length >= 2;
       spinButton.disabled = !canSpin;
-      rerollButton.disabled = !canSpin;
       excludeButton.disabled = isSpinning || !currentWinner || !participants.includes(currentWinner);
       shuffleButton.disabled = isSpinning || participants.length < 2;
       clearButton.disabled = isSpinning;
@@ -1350,7 +1385,6 @@
 
     input.addEventListener("input", syncParticipants);
     spinButton.addEventListener("click", startSpin);
-    rerollButton.addEventListener("click", startSpin);
     excludeButton.addEventListener("click", excludeWinner);
     shuffleButton.addEventListener("click", shuffleParticipants);
     clearButton.addEventListener("click", clearAll);
@@ -1358,6 +1392,10 @@
       timer.classList.toggle("hidden-time");
     });
     window.addEventListener("resize", drawWheel);
+    window.addEventListener("load", () => {
+      syncParticipants();
+      drawWheel();
+    });
     if (document.fonts && document.fonts.ready) {
       document.fonts.ready.then(drawWheel);
     }
@@ -1365,6 +1403,8 @@
     renderPrizeButtons();
     syncParticipants();
     renderHistory();
+    setTicker("PLAYJAM 2026 경품 추첨을 시작할 준비가 되었습니다");
+    requestAnimationFrame(drawWheel);
   </script>
 </body>
 </html>
